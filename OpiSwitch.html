@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpiSwitch — 麻薬換算機</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sora',-apple-system,BlinkMacSystemFont,'Hiragino Kaku Gothic ProN','Meiryo',sans-serif;background:#f5f5f3;color:#1a1a18;min-height:100vh;padding:2rem 1rem 4rem}
+.container{max-width:700px;margin:0 auto}
+h1{font-size:22px;font-weight:600;color:#1a1a18;margin-bottom:1rem;letter-spacing:-0.3px}
+.seg-wrap{background:#e8e6df;border-radius:10px;padding:3px;display:flex;gap:0;margin-bottom:1.25rem}
+.tab-btn{flex:1;padding:9px 4px;font-size:12px;font-weight:400;color:#5f5e5a;background:transparent;border:none;border-radius:8px;cursor:pointer;font-family:inherit;transition:all .18s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
+.tab-btn:active{opacity:.75}
+.tab-btn.active{background:#fff;color:#1a1a18;font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,0.15),0 0.5px 1px rgba(0,0,0,0.08)}
+.tab-panel{display:none}.tab-panel.active{display:block}
+.card{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,0.1);padding:1.25rem;margin-bottom:1rem}
+.sec-label{font-size:10.5px;font-weight:500;color:#888780;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.drug-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dbtn{padding:10px 8px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.12);background:#fff;cursor:pointer;text-align:left;transition:all .15s;display:flex;flex-direction:column;gap:3px;font-family:inherit}
+.dbtn .dname{font-weight:500;color:#2c2c2a;font-size:12px;line-height:1.3}
+.dbtn .droute{font-size:10px;color:#888780;background:#f1efe8;padding:1px 6px;border-radius:10px;display:inline-block}
+.dbtn .dbrand{font-size:10px;color:#b4b2a9;line-height:1.4;margin-top:1px}
+.dbtn:hover{border-color:rgba(0,0,0,0.25);background:#fafaf8}
+.dbtn.sel{border-color:#185FA5;background:#E6F1FB}
+.dbtn.sel .dname{color:#0C447C}.dbtn.sel .droute{background:#b5d4f4;color:#185FA5}.dbtn.sel .dbrand{color:#378ADD}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem}
+.form-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.fg{display:flex;flex-direction:column;gap:6px}
+.fg label{font-size:12.5px;color:#5f5e5a}
+input[type=number],select{width:100%;padding:8px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.15);background:#fff;font-size:14px;font-family:inherit;color:#1a1a18;outline:none}
+input[type=number]:focus,select:focus{border-color:#185FA5;box-shadow:0 0 0 2px rgba(24,95,165,0.15)}
+.result-wrap{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.res-hdr{font-size:12px;color:#888780;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.res-hdr b{color:#185FA5;font-weight:500;font-size:14px}
+.res-item{display:grid;grid-template-columns:1fr auto;align-items:center;gap:12px;padding:.65rem 0;border-bottom:0.5px solid rgba(0,0,0,0.07)}
+.res-item:last-child{border-bottom:none;padding-bottom:0}
+.res-left .dname{font-size:13px;color:#1a1a18;font-weight:500}
+.res-left .droute-tag{display:inline-block;font-size:10px;color:#5f5e5a;background:#f1efe8;padding:1px 6px;border-radius:10px;margin-top:2px}
+.res-left .dbrand-small{font-size:10px;color:#b4b2a9;margin-top:2px}
+.res-right{text-align:right;min-width:110px}
+.res-dose{font-size:22px;font-weight:500;color:#0C447C;line-height:1.1}
+.res-unit{font-size:11px;color:#888780;margin-bottom:2px}
+.chips{display:flex;gap:4px;justify-content:flex-end;flex-wrap:wrap;margin-top:5px}
+.chip{font-size:10.5px;padding:2px 8px;border-radius:20px;border:0.5px solid rgba(0,0,0,0.12);background:#f1efe8;color:#5f5e5a}
+.chip.best{background:#E6F1FB;border-color:#85B7EB;color:#0C447C;font-weight:500}
+.empty{text-align:center;padding:2.5rem;color:#b4b2a9;font-size:13px}
+details{background:#fff;border-radius:8px;border:0.5px solid rgba(0,0,0,0.1);padding:10px 12px;margin-bottom:1rem}
+details summary{font-size:12px;color:#5f5e5a;cursor:pointer;font-weight:500}
+.basis-table{width:100%;border-collapse:collapse;font-size:11px;color:#5f5e5a;margin-top:.75rem}
+.basis-table th{text-align:left;font-weight:500;color:#888780;padding:5px 6px;border-bottom:0.5px solid rgba(0,0,0,0.1);background:#f5f5f3}
+.basis-table td{padding:5px 6px;border-bottom:0.5px solid rgba(0,0,0,0.07)}
+/* 注意タブ */
+.switch-drug-sel{margin-bottom:1rem}
+.caution-card{background:#fff;border-radius:12px;border:0.5px solid rgba(0,0,0,0.1);padding:1.25rem;margin-bottom:.75rem}
+.caution-card h3{font-size:13px;font-weight:500;color:#0C447C;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.caution-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:.6rem;font-size:12.5px;line-height:1.65;color:#2c2c2a}
+.caution-row:last-child{margin-bottom:0}
+.caution-icon{flex-shrink:0;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:1px}
+.icon-warn{background:#FAEEDA;color:#854F0B}.icon-info{background:#E6F1FB;color:#185FA5}.icon-ok{background:#EAF3DE;color:#3B6D11}
+.caution-source{font-size:10px;color:#b4b2a9;margin-top:.75rem}
+.empty-caution{text-align:center;padding:3rem;color:#b4b2a9;font-size:13px}
+/* CADD注射設定タブ */
+.iv-drug-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1rem}
+.iv-dbtn{padding:10px 10px;border-radius:8px;border:0.5px solid rgba(0,0,0,0.12);background:#fff;cursor:pointer;text-align:left;font-family:inherit;transition:all .15s}
+.iv-dbtn .dname{font-weight:500;color:#2c2c2a;font-size:12.5px}
+.iv-dbtn .dsub{font-size:10.5px;color:#888780;margin-top:3px}
+.iv-dbtn.sel{border-color:#185FA5;background:#E6F1FB}
+.iv-dbtn.sel .dname{color:#0C447C}.iv-dbtn.sel .dsub{color:#378ADD}
+.iv-dbtn:hover{border-color:rgba(0,0,0,0.25)}
+.from-badge{display:inline-flex;align-items:center;gap:6px;background:#E6F1FB;border:0.5px solid #85B7EB;border-radius:8px;padding:7px 12px;font-size:12px;color:#0C447C;margin-bottom:1rem;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.from-badge span{font-weight:500}
+/* 結果カード */
+.iv-result{background:#fff;border:0.5px solid rgba(0,0,0,0.1);border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.iv-res-hdr{font-size:12px;color:#888780;margin-bottom:1rem;padding-bottom:.75rem;border-bottom:0.5px solid rgba(0,0,0,0.08)}
+.iv-res-hdr b{color:#185FA5;font-weight:500}
+/* ビッグスタット */
+.stat-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.stat{background:#f5f5f3;border-radius:10px;padding:12px 14px}
+.stat.hi{background:#E6F1FB}
+.stat .lbl{font-size:11px;color:#888780;margin-bottom:4px}
+.stat.hi .lbl{color:#378ADD}
+.stat .val{font-size:26px;font-weight:600;color:#1a1a18;line-height:1}
+.stat.hi .val{color:#0C447C}
+.stat .unt{font-size:12px;font-weight:400;color:#888780;margin-left:4px}
+.stat.hi .unt{color:#378ADD}
+/* アンプル内訳 */
+.amp-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:1rem}
+.amp-table th{font-size:11px;font-weight:500;color:#888780;text-align:left;padding:6px 8px;border-bottom:0.5px solid rgba(0,0,0,0.1);background:#f5f5f3}
+.amp-table td{padding:7px 8px;border-bottom:0.5px solid rgba(0,0,0,0.07)}
+.amp-table tr.total-row td{font-weight:500;border-top:1px solid rgba(0,0,0,0.12);border-bottom:none;background:#fafaf8}
+.amp-tag{display:inline-block;background:#f1efe8;border-radius:5px;padding:1px 7px;font-size:10.5px;color:#5f5e5a}
+/* 詳細行 */
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:0.5px solid rgba(0,0,0,0.07);font-size:12.5px}
+.detail-row:last-child{border-bottom:none}
+.detail-row .lbl{color:#5f5e5a}
+.detail-row .val{font-weight:500;color:#1a1a18}
+.iv-warn{background:#fff8f8;border-left:3px solid #E24B4A;border-radius:0 8px 8px 0;padding:8px 12px;font-size:11.5px;color:#71281e;line-height:1.7;margin-top:.75rem}
+.iv-info{background:#f0f7ff;border-left:3px solid #85B7EB;border-radius:0 8px 8px 0;padding:8px 12px;font-size:11.5px;color:#0C447C;line-height:1.7;margin-top:.5rem}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>OpiSwitch<span style="font-weight:400;font-size:14px;color:#888780;margin-left:10px;letter-spacing:0">麻薬換算機</span></h1>
+
+  <div class="seg-wrap">
+    <button class="tab-btn active" onclick="switchTab('calc',this)">換算計算</button>
+    <button class="tab-btn" onclick="switchTab('iv',this)">注射設定</button>
+    <button class="tab-btn" onclick="switchTab('caution',this)">切り替え注意</button>
+  </div>
+
+  <!-- ===== 換算計算 ===== -->
+  <div id="tab-calc" class="tab-panel active">
+    <div class="card">
+      <div class="sec-label">変換元の薬剤を選択</div>
+      <div class="drug-grid" id="drugBtns"></div>
+      <div class="form-row">
+        <div class="fg"><label id="doseLabel">投与量 (mg/日)</label>
+          <input type="number" id="doseInput" min="0" step="1" placeholder="0"></div>
+        <div class="fg"><label>製品規格から選ぶ（任意）</label>
+          <select id="specSel"><option value="">— 先に薬剤を選択 —</option></select></div>
+      </div>
+    </div>
+    <div id="resultArea"><div class="result-wrap"><div class="empty">薬剤を選択して投与量を入力してください</div></div></div>
+    <details>
+      <summary>▶ 換算係数の根拠（JSPM 2020 / 聖隷三方原換算表）</summary>
+      <table class="basis-table">
+        <tr><th>薬剤</th><th>換算比</th><th>根拠</th></tr>
+        <tr><td>フェントステープ（貼付）</td><td>2mg = 経口Mo 60mg/日</td><td>JSPM2020・聖隷三方原（25μg/hr = Mo60mg/日）</td></tr>
+        <tr><td>モルヒネ 経口</td><td>基準</td><td>WHO / JSPM2020</td></tr>
+        <tr><td>モルヒネ 注射</td><td>経口Mo 2 : 注射Mo 1</td><td>JSPM2020（Mo60mg経口 = Mo30mg注射）</td></tr>
+        <tr><td>オキシコドン 経口</td><td>経口Mo 3 : 経口Oxy 2</td><td>JSPM2020（Mo15mg = Oxy10mg）</td></tr>
+        <tr><td>オキシコドン 注射</td><td>注射Oxy ≒ 注射Mo</td><td>聖隷三方原院内基準（1:1換算）</td></tr>
+        <tr><td>ヒドロモルフォン 経口</td><td>経口Mo 5 : ナルサス 1</td><td>JSPM2020・ナルサス添付文書（Mo経口の1/5量）</td></tr>
+        <tr><td>タペンタドール 経口</td><td>タペンタ 3.33 : 経口Mo 1</td><td>JSPM2020（タペンタ200mg = Mo60mg）</td></tr>
+        <tr><td>トラマドール 経口</td><td>トラマドール 10 : 経口Mo 1</td><td>聖隷三方原安全側基準（添付文書5:1の安全側）</td></tr>
+        <tr><td>コデイン 経口</td><td>コデイン 6.67 : 経口Mo 1</td><td>JSPM2020（コデイン200mg = Mo30mg相当）</td></tr>
+      </table>
+    </details>
+  </div>
+
+  <!-- ===== 注射設定（CADD PCA） ===== -->
+  <div id="tab-iv" class="tab-panel">
+    <div id="ivBadge" style="display:none">
+      <div class="from-badge" onclick="applyFromCalc()">↩ 換算タブから引き継ぐ：<span id="ivBadgeText">—</span></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label">注射薬剤</div>
+      <div class="iv-drug-grid" id="ivDrugBtns"></div>
+    </div>
+
+    <div class="card">
+      <div class="sec-label">処方設計</div>
+      <div class="form-row" style="margin-top:0">
+        <div class="fg"><label>1日投与量 (mg/日)</label>
+          <input type="number" id="ivDose" min="0" step="1" placeholder="例：30" oninput="calcIV()"></div>
+        <div class="fg"><label>カセット容量</label>
+          <select id="ivCassette" onchange="calcIV()">
+            <option value="50">50 mL</option>
+            <option value="100" selected>100 mL</option>
+            <option value="200">200 mL</option>
+            <option value="500">500 mL</option>
+          </select></div>
+      </div>
+      <div class="form-row" style="margin-top:.75rem">
+        <div class="fg"><label>使用日数 (日)</label>
+          <input type="number" id="ivDays" min="1" step="1" value="7" placeholder="7" oninput="calcIV()"></div>
+        <div class="fg"><label>PCA回数/日（想定）</label>
+          <input type="number" id="ivPcaPerDay" min="0" step="1" value="3" placeholder="3" oninput="calcIV()"></div>
+      </div>
+      <div class="form-row" style="margin-top:.75rem">
+        <div class="fg"><label>ロックアウトタイム (分)</label>
+          <input type="number" id="ivLockout" min="0" step="5" value="15" placeholder="15" oninput="calcIV()"></div>
+        <div class="fg"><label id="ivPcaDoseLabel" style="display:flex;align-items:center;gap:6px">PCAドーズ量 (mL/回) <span style="font-size:10px;background:#f1efe8;border-radius:5px;padding:1px 6px;color:#888780">自動計算</span></label>
+          <input type="number" id="ivPcaDose" min="0" step="0.01" placeholder="自動" oninput="calcIV()"></div>
+      </div>
+    </div>
+
+    <div id="ivResultArea"><div class="iv-result"><div class="empty">薬剤と投与量を入力してください</div></div></div>
+  </div>
+
+  <!-- ===== 切り替え注意 ===== -->
+  <div id="tab-caution" class="tab-panel">
+    <div class="switch-drug-sel">
+      <div class="sec-label">切り替え先の薬剤を選択</div>
+      <select id="cautionSel" onchange="renderCaution()">
+        <option value="">— 薬剤を選択してください —</option>
+        <option value="fentanyl">フェントステープ（貼付剤）</option>
+        <option value="morphine_po">モルヒネ 経口</option>
+        <option value="morphine_iv">モルヒネ 注射</option>
+        <option value="oxy_po">オキシコドン 経口（オキシコンチンTR®）</option>
+        <option value="oxy_iv">オキシコドン 注射（オキファスト®）</option>
+        <option value="hydromorphone">ヒドロモルフォン（ナルサス®）</option>
+        <option value="tapentadol">タペンタドール（タペンタ®）</option>
+        <option value="tramadol">トラマドール（トラマール®）</option>
+      </select>
+    </div>
+    <div id="cautionArea"><div class="empty-caution">切り替え先の薬剤を選択してください</div></div>
+  </div>
+</div>
+
+<footer style="max-width:700px;margin:2rem auto 0;padding:1rem 1rem;border-top:0.5px solid rgba(0,0,0,0.1)">
+  <p style="font-size:11px;color:#888780;line-height:1.8">
+    <strong style="font-size:11px;color:#5f5e5a">【免責事項】</strong>
+    本ツールは医療従事者向けの参考情報の提供を目的として作成されており、医療行為の代替となるものではありません。掲載している換算値は日本緩和医療学会ガイドライン2020・各薬剤添付文書等をもとに作成していますが、等価用量は文献・施設によって異なる場合があります。実際の処方・投与量の決定は、患者の状態（オピオイド耐性・腎機能・肝機能・副作用歴・個人差等）を十分に考慮したうえで、必ず医師の判断に基づいて行ってください。オピオイドローテーション時は原則として換算後用量から25〜50%の減量を行ってください。本ツールの使用により生じたいかなる不利益・損害についても、作成者は責任を負いません。
+  </p>
+</footer>
+
+<script>
+// ===== タブ =====
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+  if(id==='iv') updateIvBadge();
+}
+
+// ===== 換算薬剤データ =====
+var DRUGS=[
+  {id:'fentanyl',name:'フェントステープ',brands:'フェントステープ® / デュロテップMTパッチ®',route:'貼付剤',unit:'mg/日',step:0.5,specs:[0.5,1.0,1.5,2.0,3.0,4.0,6.0,8.0],su:'mg',toMME:function(d){return d*30},fromMME:function(m){return+(m/30).toFixed(2)}},
+  {id:'morphine_po',name:'モルヒネ 経口',brands:'MSコンチン® / MSツワイスロン® / ピーガード® / カディアン® / オプソ®',route:'経口',unit:'mg/日',step:5,specs:[5,10,15,20,30,45,60,90,120],su:'mg',toMME:function(d){return d},fromMME:function(m){return+m.toFixed(1)}},
+  {id:'morphine_iv',name:'モルヒネ 注射',brands:'塩酸モルヒネ注®（10mg/1mL, 50mg/5mL, 200mg/5mL）',route:'注射',unit:'mg/日',step:5,specs:[10,15,20,30,40,60],su:'mg/日',toMME:function(d){return d*2},fromMME:function(m){return+(m/2).toFixed(1)}},
+  {id:'oxy_po',name:'オキシコドン 経口',brands:'オキシコンチンTR® / オキノーム®',route:'経口',unit:'mg/日',step:5,specs:[5,10,15,20,30,40,60,80],su:'mg',toMME:function(d){return d*1.5},fromMME:function(m){return+(m/1.5).toFixed(1)}},
+  {id:'oxy_iv',name:'オキシコドン 注射',brands:'オキファスト®（10mg/1mL, 250mg/25mL）',route:'注射',unit:'mg/日',step:5,specs:[10,20,30,40,60],su:'mg/日',toMME:function(d){return d},fromMME:function(m){return+m.toFixed(1)}},
+  {id:'hydromorphone',name:'ヒドロモルフォン 経口',brands:'ナルサス® / ナルラピド® / ナルベイン®（注射）',route:'経口',unit:'mg/日',step:1,specs:[2,4,6,8,12,16,24],su:'mg',toMME:function(d){return d*5},fromMME:function(m){return+(m/5).toFixed(1)}},
+  {id:'tapentadol',name:'タペンタドール',brands:'タペンタ®',route:'経口',unit:'mg/日',step:25,specs:[50,100,150,200,250,400],su:'mg',toMME:function(d){return+(d/3.33).toFixed(1)},fromMME:function(m){return+(m*3.33).toFixed(0)}},
+  {id:'tramadol',name:'トラマドール',brands:'トラマール® / ワントラム® / トアラセット®（配合）',route:'経口',unit:'mg/日',step:25,specs:[25,50,75,100,150,200,300,400],su:'mg',toMME:function(d){return+(d/10).toFixed(1)},fromMME:function(m){return+(m*10).toFixed(0)}},
+  {id:'codeine',name:'コデイン',brands:'リン酸コデイン散®',route:'経口',unit:'mg/日',step:20,specs:[20,40,60,80,100,120,200],su:'mg',toMME:function(d){return+(d/6.67).toFixed(1)},fromMME:function(m){return+(m*6.67).toFixed(0)}}
+];
+
+// ===== 注射薬剤データ =====
+// ampoules: [{ label, mg, mL }] mg/アンプル, mL/アンプル
+var IV_DRUGS=[
+  {id:'morphine_iv', name:'モルヒネ', brand:'塩酸モルヒネ注®',
+   ampoules:[
+     {label:'200mg/5mL（40mg/mL）', mg:200, mL:5},
+     {label:' 50mg/5mL（10mg/mL）', mg:50,  mL:5},
+     {label:' 10mg/1mL（10mg/mL）', mg:10,  mL:1}
+   ]},
+  {id:'oxy_iv', name:'オキシコドン', brand:'オキファスト®',
+   ampoules:[
+     {label:'250mg/25mL（10mg/mL）', mg:250, mL:25},
+     {label:' 50mg/5mL（10mg/mL）',  mg:50,  mL:5},
+     {label:' 10mg/1mL（10mg/mL）',  mg:10,  mL:1}
+   ]},
+  {id:'hm_iv', name:'ヒドロモルフォン', brand:'ナルベイン®',
+   ampoules:[
+     {label:'20mg/10mL（2mg/mL）', mg:20, mL:10},
+     {label:' 2mg/1mL（2mg/mL）',  mg:2,  mL:1}
+   ]},
+  {id:'fentanyl_iv', name:'フェンタニル', brand:'フェンタニル注®',
+   ampoules:[
+     {label:'2.5mg/50mL（0.05mg/mL）', mg:2.5,  mL:50},
+     {label:'0.5mg/10mL（0.05mg/mL）',  mg:0.5,  mL:10},
+     {label:'0.25mg/5mL（0.05mg/mL）',  mg:0.25, mL:5}
+   ]}
+];
+
+var ivSel=null;
+
+function renderIvDrugBtns(){
+  var g=document.getElementById('ivDrugBtns'); g.innerHTML='';
+  IV_DRUGS.forEach(function(d){
+    var b=document.createElement('button');
+    b.className='iv-dbtn'+(ivSel&&ivSel.id===d.id?' sel':'');
+    b.innerHTML='<div class="dname">'+d.name+'</div><div class="dsub">'+d.brand+'</div>';
+    b.onclick=function(){ivSel=d; renderIvDrugBtns(); calcIV();};
+    g.appendChild(b);
+  });
+}
+
+// アンプル組み合わせ（貪欲法：大アンプルから埋める）
+function combineAmps(targetMg, ampoules){
+  var sorted=ampoules.slice().sort(function(a,b){return b.mg-a.mg;});
+  var result=[], rem=targetMg;
+  sorted.forEach(function(a){
+    var n=Math.floor(rem/a.mg);
+    if(n>0){result.push({label:a.label,mg:a.mg,mL:a.mL,count:n}); rem-=n*a.mg;}
+  });
+  if(rem>0.001){
+    var sm=sorted[sorted.length-1];
+    var ex=result.find(function(r){return r.mg===sm.mg;});
+    if(ex)ex.count++; else result.push({label:sm.label,mg:sm.mg,mL:sm.mL,count:1});
+  }
+  return result;
+}
+
+function combineAmps(targetMg, amps){
+  var sorted=amps.slice().sort(function(a,b){return b.mg-a.mg;});
+  var result=[],rem=targetMg;
+  sorted.forEach(function(a){var n=Math.floor(rem/a.mg);if(n>0){result.push({label:a.label,mg:a.mg,mL:a.mL,count:n});rem-=n*a.mg;}});
+  if(rem>0.001){var sm=sorted[sorted.length-1];var ex=result.find(function(r){return r.mg===sm.mg;});if(ex)ex.count++;else result.push({label:sm.label,mg:sm.mg,mL:sm.mL,count:1});}
+  return result;
+}
+
+function calcIV(){
+  var ra=document.getElementById('ivResultArea');
+  if(!ivSel){ra.innerHTML='<div class="iv-result"><div class="empty">注射薬剤を選択してください</div></div>';return;}
+  var dpd=parseFloat(document.getElementById('ivDose').value);
+  if(isNaN(dpd)||dpd<=0){ra.innerHTML='<div class="iv-result"><div class="empty">1日投与量を入力してください</div></div>';return;}
+
+  var cassVol   = parseFloat(document.getElementById('ivCassette').value)||100;
+  var days      = parseFloat(document.getElementById('ivDays').value)||7;
+  var pcaPerDay = parseFloat(document.getElementById('ivPcaPerDay').value)||3;
+  var lockout   = parseFloat(document.getElementById('ivLockout').value)||15;
+
+  // PCAドーズ(mg/回) = dpd/6（標準：1日量の1/6）
+  // 手動入力がなければ自動計算
+  var pcaDoseMlInput = parseFloat(document.getElementById('ivPcaDose').value);
+
+  // Step1: 総薬量 = 持続分(dpd×days) + PCA分(dpd/6 × pcaPerDay × days)
+  var pcaDoseMg = dpd / 6;
+  var totalDrugMgNeeded = dpd * days + pcaDoseMg * pcaPerDay * days;
+
+  // Step2: アンプル組み合わせ
+  var combo = combineAmps(totalDrugMgNeeded, ivSel.ampoules);
+  var actMg=0, actMl=0;
+  combo.forEach(function(c){actMg+=c.count*c.mg; actMl+=c.count*c.mL;});
+  var saline = cassVol - actMl;
+
+  if(saline < 0){
+    ra.innerHTML='<div class="iv-result"><div class="iv-warn">薬液量（'+actMl.toFixed(0)+'mL）がカセット容量（'+cassVol+'mL）を超えています。カセット容量を大きくするか、使用日数・PCA回数を減らしてください。</div></div>';
+    return;
+  }
+
+  // Step3: 実濃度
+  var actConc = actMg / cassVol;
+
+  // Step4: PCAドーズ(mL/回)
+  var pcaDoseMl = isNaN(pcaDoseMlInput)||pcaDoseMlInput<=0
+    ? pcaDoseMg / actConc   // 自動計算
+    : pcaDoseMlInput;       // 手動入力
+
+  // 手動入力時はPCAドーズ(mg)を実濃度から逆算
+  if(!isNaN(pcaDoseMlInput)&&pcaDoseMlInput>0){
+    pcaDoseMg = actConc * pcaDoseMlInput;
+  }
+
+  // プレースホルダー更新
+  document.getElementById('ivPcaDose').placeholder = pcaDoseMl.toFixed(2);
+
+  // Step5: 流速計算
+  // cassVol = flowRate×24×days + pcaDoseMl×pcaPerDay×days
+  // flowRate×24 = (cassVol/days - pcaDoseMl×pcaPerDay)
+  var flowPerDay = cassVol / days - pcaDoseMl * pcaPerDay;
+  var flowRate = flowPerDay / 24;
+
+  if(flowRate <= 0){
+    ra.innerHTML='<div class="iv-result"><div class="iv-warn">PCAドーズ量が多すぎてカセット容量内に収まりません。PCA回数・日数・カセット容量を見直してください。</div></div>';
+    return;
+  }
+
+  // Step6: 実際の値
+  var contDpd   = actConc * flowRate * 24;
+  var pcaTotalMg = pcaDoseMg * pcaPerDay;
+  var totalDpdActual = contDpd + pcaTotalMg;
+  var actualDays = cassVol / (flowRate*24 + pcaDoseMl*pcaPerDay);
+  var flowMlDay  = flowRate * 24;
+
+  var html='<div class="iv-result">';
+  html+='<div class="iv-res-hdr">'+ivSel.name+' <b>'+dpd+'mg/日</b> / '+cassVol+'mLカセット / '+days+'日設計（PCA '+pcaPerDay+'回/日）</div>';
+
+  // メイン4スタット
+  html+='<div class="stat-row">';
+  html+='<div class="stat hi"><div class="lbl">流速（自動計算）</div><div class="val">'+flowRate.toFixed(3)+'<span class="unt">mL/hr</span></div></div>';
+  html+='<div class="stat hi"><div class="lbl">PCAドーズ量</div><div class="val">'+pcaDoseMl.toFixed(2)+'<span class="unt">mL/回</span></div></div>';
+  html+='</div>';
+  html+='<div class="stat-row">';
+  html+='<div class="stat hi"><div class="lbl">PCAドーズ (mg/回) <span style="font-weight:400;font-size:10px;opacity:.75">= '+ivSel.name+'量</span></div><div class="val">'+pcaDoseMg.toFixed(1)+'<span class="unt">mg</span></div></div>';
+  html+='<div class="stat hi"><div class="lbl">ロックアウト</div><div class="val">'+lockout+'<span class="unt">分</span></div></div>';
+  html+='</div>';
+
+  // アンプル内訳
+  html+='<table class="amp-table">';
+  html+='<tr><th>アンプル</th><th style="text-align:right">本数</th><th style="text-align:right">薬量</th><th style="text-align:right">薬液量</th></tr>';
+  combo.forEach(function(c){
+    html+='<tr><td><span class="amp-tag">'+c.label.trim()+'</span></td><td style="text-align:right">'+c.count+'A</td><td style="text-align:right">'+(c.count*c.mg)+'mg</td><td style="text-align:right">'+(c.count*c.mL)+'mL</td></tr>';
+  });
+  html+='<tr><td>生理食塩水</td><td></td><td></td><td style="text-align:right">'+saline.toFixed(1)+'mL</td></tr>';
+  html+='<tr class="total-row"><td>合計</td><td></td><td style="text-align:right">'+actMg.toFixed(0)+'mg</td><td style="text-align:right">'+cassVol+'mL</td></tr>';
+  html+='</table>';
+
+  // 詳細
+  html+='<div class="detail-row"><span class="lbl">実濃度</span><span class="val">'+actConc.toFixed(4)+' mg/mL</span></div>';
+  html+='<div class="detail-row"><span class="lbl">流量（mL/日）</span><span class="val">'+flowMlDay.toFixed(2)+' mL/日</span></div>';
+  html+='<div class="detail-row"><span class="lbl">持続投与量</span><span class="val">'+contDpd.toFixed(2)+' mg/日</span></div>';
+  html+='<div class="detail-row"><span class="lbl">PCA合計（'+pcaPerDay+'回/日）</span><span class="val">'+pcaTotalMg.toFixed(1)+' mg/日</span></div>';
+  html+='<div class="detail-row"><span class="lbl">持続＋PCA合計</span><span class="val">'+totalDpdActual.toFixed(2)+' mg/日</span></div>';
+  html+='<div class="detail-row"><span class="lbl">カセット持続日数（設計）</span><span class="val">'+actualDays.toFixed(1)+' 日</span></div>';
+
+  if(ivSel.id==='fentanyl_iv'){
+    html+='<div class="iv-info">フェンタニル注は0.05mg/mL製剤。持続皮下注への使用は刺激性があるため、施設方針により静注を優先する場合があります。</div>';
+  }
+  html+='</div>';
+  ra.innerHTML=html;
+}
+
+// 換算タブからの引き継ぎ
+var sel=null, lastCalcDose=null;
+
+function updateIvBadge(){
+  var badge=document.getElementById('ivBadge');
+  var txt=document.getElementById('ivBadgeText');
+  if(!sel||!lastCalcDose){badge.style.display='none';return;}
+  var ivMap={'morphine_iv':'morphine_iv','oxy_iv':'oxy_iv','hm_iv':'hydromorphone'};
+  // 注射製剤が換算元なら直接、経口なら換算して提案
+  var ivDrug=null, ivDose=null;
+  if(sel.id==='morphine_iv'||sel.id==='oxy_iv'){
+    ivDrug=IV_DRUGS.find(function(d){return d.id===sel.id;});
+    ivDose=lastCalcDose;
+  } else if(sel.id==='hydromorphone'){
+    ivDrug=IV_DRUGS.find(function(d){return d.id==='hm_iv';});
+    // ナルサスからナルベイン：1/5
+    ivDose=+(lastCalcDose/5).toFixed(1);
+  } else {
+    // 経口→注射モルヒネ換算
+    ivDrug=IV_DRUGS.find(function(d){return d.id==='morphine_iv';});
+    var mme=sel.toMME(lastCalcDose);
+    ivDose=DRUGS.find(function(d){return d.id==='morphine_iv';}).fromMME(mme);
+  }
+  if(!ivDrug||ivDose<=0){badge.style.display='none';return;}
+  badge.style.display='block';
+  txt.textContent=ivDrug.name+' '+ivDose+'mg/日';
+  badge._ivDrug=ivDrug; badge._ivDose=ivDose;
+}
+
+function applyFromCalc(){
+  var badge=document.getElementById('ivBadge');
+  if(!badge._ivDrug) return;
+  ivSel=badge._ivDrug; renderIvDrugBtns();
+  document.getElementById('ivDose').value=badge._ivDose;
+  calcIV();
+}
+
+// 換算計算
+function renderBtns(){
+  var g=document.getElementById('drugBtns');g.innerHTML='';
+  DRUGS.forEach(function(d){
+    var b=document.createElement('button');
+    b.className='dbtn'+(sel&&sel.id===d.id?' sel':'');
+    b.innerHTML='<span class="dname">'+d.name+'</span><span class="droute">'+d.route+'</span><span class="dbrand">'+d.brands+'</span>';
+    b.onclick=function(){pick(d);};
+    g.appendChild(b);
+  });
+}
+function pick(drug){
+  sel=drug; renderBtns();
+  var s=document.getElementById('specSel');
+  s.innerHTML='<option value="">— 規格を選択（任意）—</option>';
+  drug.specs.forEach(function(v){var o=document.createElement('option');o.value=v;o.textContent=v+' '+drug.su;s.appendChild(o);});
+  var di=document.getElementById('doseInput');di.step=drug.step;di.value='';
+  document.getElementById('doseLabel').textContent='投与量 ('+drug.unit+')';
+  lastCalcDose=null; calc();
+}
+function nearestSpecs(drug,dose){
+  return drug.specs.slice().sort(function(a,b){return Math.abs(a-dose)-Math.abs(b-dose);}).slice(0,4);
+}
+function calc(){
+  var dose=parseFloat(document.getElementById('doseInput').value);
+  var ra=document.getElementById('resultArea');
+  lastCalcDose=(!isNaN(dose)&&dose>0)?dose:null;
+  if(!sel||isNaN(dose)||dose<=0){ra.innerHTML='<div class="result-wrap"><div class="empty">薬剤と投与量を入力してください</div></div>';return;}
+  var mme=sel.toMME(dose);
+  var targets=DRUGS.filter(function(d){return d.id!==sel.id;});
+  var html='<div class="result-wrap"><div class="res-hdr">経口モルヒネ換算量&nbsp;<b>'+mme.toFixed(1)+' mg/日</b>&nbsp;を基準に換算</div>';
+  targets.forEach(function(t){
+    var cv=t.fromMME(mme);
+    var ns=nearestSpecs(t,cv);
+    html+='<div class="res-item"><div class="res-left"><div class="dname">'+t.name+'</div><div><span class="droute-tag">'+t.route+'</span></div><div class="dbrand-small">'+t.brands+'</div></div><div class="res-right"><div class="res-unit">'+t.unit+'</div><div class="res-dose">'+cv+'</div><div class="chips">';
+    ns.forEach(function(s){var best=Math.abs(s-cv)/Math.max(cv,0.01)<0.25;html+='<span class="chip'+(best?' best':'')+'">'+s+'</span>';});
+    html+='</div></div></div>';
+  });
+  html+='</div>';
+  ra.innerHTML=html;
+}
+document.getElementById('doseInput').addEventListener('input',calc);
+document.getElementById('specSel').addEventListener('change',function(){if(this.value){document.getElementById('doseInput').value=this.value;calc();}});
+
+// 切り替え注意
+var CAUTIONS={
+  fentanyl:{title:'フェントステープ® への切り替え',source:'フェントステープ添付文書 / JSPM2020',items:[
+    {type:'warn',text:'初回貼付用量として8mgは推奨されない（8mgへの使用経験は少ない）。'},
+    {type:'info',text:'換算基準：経口Mo≦15mg/日→0.5mg、16〜29mg/日→1mg、30〜44mg/日→1.5mg、45〜59mg/日→2mg、60〜89mg/日→2mg、90〜134mg/日→4mg、135〜189mg/日→6mg、≧190mg/日→8mg。'},
+    {type:'warn',text:'貼付開始から定常状態まで約48〜72時間かかる。前薬の効果が残存するため重複投与による過量投与に注意。'},
+    {type:'warn',text:'他薬へ切り替える際は剥離後17時間以上フェンタニルが残存するため、次薬初回量は低用量から開始。'},
+    {type:'ok',  text:'増量は2日以上間隔をあけて。増量目安は現用量の25〜50%増。'},
+    {type:'warn',text:'発熱・電気毛布・カイロ等による体温上昇でフェンタニル吸収量が増大。過量投与・死亡例の報告あり。'}
+  ]},
+  morphine_po:{title:'モルヒネ 経口 への切り替え',source:'MSコンチン®・オプソ®添付文書 / JSPM2020',items:[
+    {type:'info',text:'オピオイド未使用患者：MSコンチン®は20〜30mg/日（10mg×2〜3回）から開始。'},
+    {type:'info',text:'他オピオイドからの変換：換算後の用量を目安とし、交叉耐性を考慮して10〜30%減量して開始するのが原則。'},
+    {type:'warn',text:'腎機能障害（eGFR＜30mL/min）では活性代謝物（M6G）が蓄積し呼吸抑制リスクが増大。腎機能低下例には原則使用しない。'},
+    {type:'ok',  text:'増量目安は現用量の25〜50%増。増量は2日以上の間隔をあけて行う。'},
+    {type:'ok',  text:'レスキュー量：定期投与量の1/6量（1日量の約16%）を1回量とし、1時間以上間隔をあけて使用可。'}
+  ]},
+  morphine_iv:{title:'モルヒネ 注射 への切り替え',source:'塩酸モルヒネ注®添付文書 / JSPM2020',items:[
+    {type:'info',text:'経口モルヒネから注射への変換：経口量の1/2量が目安（JSPM2020：経口2：注射1換算）。'},
+    {type:'info',text:'フェントステープからの切り替え：剥離後もフェンタニルは17時間以上残存。低用量から開始して徐々に増量。'},
+    {type:'warn',text:'200mg/5mL製剤（40mg/mL）は10mg/1mL製剤の4倍濃度。製剤変更時は注入速度・量を慎重に確認し過量投与に注意。'},
+    {type:'warn',text:'腎機能障害（eGFR＜30mL/min）では活性代謝物M6Gが蓄積。可能であればフェンタニルへの変更を検討。'},
+    {type:'ok',  text:'持続皮下注レスキュー：1時間投与量を1回量として早送り。必要に応じ1〜2時間量まで増量可（意識清明・呼吸数≧10回/分を確認）。'}
+  ]},
+  oxy_po:{title:'オキシコドン 経口（オキシコンチンTR®）への切り替え',source:'オキシコンチンTR®添付文書 / JSPM2020',items:[
+    {type:'info',text:'モルヒネ経口からの変換：モルヒネ経口1日量の2/3量を初回1日投与量の目安（添付文書記載）。例：経口モルヒネ60mg→オキシコドン40mg。'},
+    {type:'warn',text:'フェントステープからの切り替え：剥離後17時間以上フェンタニルが残存。剥離直後の使用は避け低用量から開始。'},
+    {type:'ok',  text:'1日2回（12時間ごと）均等分割投与。増量目安は現用量の25〜50%増。増量は前回投与から2日以上の間隔をあける。'},
+    {type:'ok',  text:'レスキュー量：オキノーム®を1日量の1/8〜1/4量として使用。1時間以上間隔をあけて反復可能。'}
+  ]},
+  oxy_iv:{title:'オキシコドン 注射（オキファスト®）への切り替え',source:'オキファスト®添付文書 / 聖隷三方原換算表',items:[
+    {type:'info',text:'添付文書上はモルヒネ注射の1.25倍量を目安とするが、聖隷三方原では安全性を重視して1:1換算（モルヒネ注10mg=オキシコドン注10mg）を採用。'},
+    {type:'warn',text:'250mg/25mL高濃度製剤への変更時は注入速度の換算ミスに注意。'},
+    {type:'ok',  text:'経口オキシコドンから注射への変換：経口量の約2/3（経口3：注射2）が目安。'}
+  ]},
+  hydromorphone:{title:'ヒドロモルフォン（ナルサス®）への切り替え',source:'ナルサス®・ナルラピド®・ナルベイン®添付文書',items:[
+    {type:'info',text:'モルヒネ経口からの変換：モルヒネ経口1日量の1/5量がナルサス®1日量の目安。例：経口モルヒネ20mg→ナルサス4mg。'},
+    {type:'warn',text:'フェントステープからの切り替え：剥離後17時間以上フェンタニルが残存するため、剥離直後の使用を避け低用量から開始。'},
+    {type:'ok',  text:'ナルサス®は1日1回（徐放）。ナルラピド®は1日4〜6回（速放）。増量目安は現用量の30〜50%増。'},
+    {type:'warn',text:'ナルサス→ナルベイン（注射）換算は1/5量。逆（ナルベイン→ナルサス）は2.5〜4倍。経路変換の方向で換算比が異なる点に注意。'},
+    {type:'info',text:'薬物相互作用が少ない（CYP代謝への影響が小さい）ため、抗がん剤との相互作用が問題になる場面で選択肢となる。'}
+  ]},
+  tapentadol:{title:'タペンタドール（タペンタ®）への切り替え',source:'タペンタ®添付文書 / JSPM2020',items:[
+    {type:'info',text:'他のオピオイドからの変換：オキシコドン徐放錠1日量の5倍量を目安。例：オキシコドン40mg→タペンタ200mg。'},
+    {type:'warn',text:'初回投与量として400mg/日を超える用量は推奨されない。'},
+    {type:'warn',text:'MAO阻害薬との併用禁忌。セロトニン症候群のリスクに注意（SSRI・SNRI・トラマドールとの併用に注意）。'},
+    {type:'warn',text:'速放性製剤がないため、突出痛のレスキューにはオキシコドンまたはモルヒネ速放製剤を使用すること。'}
+  ]},
+  tramadol:{title:'トラマドール（トラマール®）への切り替え',source:'トラマール®添付文書 / 聖隷三方原換算表',items:[
+    {type:'info',text:'添付文書上の換算：トラマール5：モルヒネ1。聖隷三方原は安全側で10:1を採用。'},
+    {type:'warn',text:'1日最大量400mgまで。MAO阻害薬との併用禁忌。セロトニン症候群・痙攣閾値低下作用に注意。'},
+    {type:'warn',text:'腎機能低下（GFR＜30）・肝機能障害では半減期延長に注意。'}
+  ]}
+};
+
+function renderCaution(){
+  var id=document.getElementById('cautionSel').value;
+  var area=document.getElementById('cautionArea');
+  if(!id){area.innerHTML='<div class="empty-caution">切り替え先の薬剤を選択してください</div>';return;}
+  var c=CAUTIONS[id]; if(!c){area.innerHTML='<div class="empty-caution">データがありません</div>';return;}
+  var iconMap={warn:'!',info:'i',ok:'✓'};
+  var html='<div class="caution-card"><h3>'+c.title+'</h3>';
+  c.items.forEach(function(item){html+='<div class="caution-row"><div class="caution-icon icon-'+item.type+'">'+iconMap[item.type]+'</div><div>'+item.text+'</div></div>';});
+  html+='<div class="caution-source">出典：'+c.source+'</div></div>';
+  area.innerHTML=html;
+}
+
+renderBtns();
+renderIvDrugBtns();
+</script>
+</body>
+</html>
