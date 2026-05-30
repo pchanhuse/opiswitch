@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -313,11 +314,27 @@ function calcIV(){
   // 手動入力がなければ自動計算
   var pcaDoseMlInput = parseFloat(document.getElementById('ivPcaDose').value);
 
-  // Step1: 総薬量 = 持続分(dpd×days) + PCA分(dpd/6 × pcaPerDay × days)
-  var pcaDoseMg = dpd / 6;
-  var totalDrugMgNeeded = dpd * days + pcaDoseMg * pcaPerDay * days;
+  // Step1: 流速を直接計算
+  // cassVol = flowRate × days × (24 + pcaPerDay)
+  // ※PCAドーズ = 1時間分の流速量
+  var flowRate = isNaN(pcaDoseMlInput)||pcaDoseMlInput<=0
+    ? cassVol / (days * (24 + pcaPerDay))   // 自動計算
+    : null; // 手動入力時は後で計算
 
-  // Step2: アンプル組み合わせ
+  // 手動入力時：指定PCAドーズ(mL)から流速を逆算
+  // cassVol = flowRate×24×days + pcaDoseMlInput×pcaPerDay×days
+  if(!isNaN(pcaDoseMlInput)&&pcaDoseMlInput>0){
+    var flowPerDay = cassVol/days - pcaDoseMlInput*pcaPerDay;
+    flowRate = flowPerDay / 24;
+    if(flowRate <= 0){
+      ra.innerHTML='<div class="iv-result"><div class="iv-warn">PCAドーズ量が多すぎてカセット容量内に収まりません。PCA回数・日数・カセット容量を見直してください。</div></div>';
+      return;
+    }
+  }
+
+  // Step2: 必要薬量・アンプル組み合わせ
+  var needConc = dpd / (flowRate * 24);
+  var totalDrugMgNeeded = needConc * cassVol;
   var combo = combineAmps(totalDrugMgNeeded, ivSel.ampoules);
   var actMg=0, actMl=0;
   combo.forEach(function(c){actMg+=c.count*c.mg; actMl+=c.count*c.mL;});
@@ -331,35 +348,20 @@ function calcIV(){
   // Step3: 実濃度
   var actConc = actMg / cassVol;
 
-  // Step4: PCAドーズ(mL/回)
+  // Step4: PCAドーズ = 1時間分の流速量
   var pcaDoseMl = isNaN(pcaDoseMlInput)||pcaDoseMlInput<=0
-    ? pcaDoseMg / actConc   // 自動計算
-    : pcaDoseMlInput;       // 手動入力
-
-  // 手動入力時はPCAドーズ(mg)を実濃度から逆算
-  if(!isNaN(pcaDoseMlInput)&&pcaDoseMlInput>0){
-    pcaDoseMg = actConc * pcaDoseMlInput;
-  }
+    ? flowRate          // 自動：1時間分
+    : pcaDoseMlInput;   // 手動
+  var pcaDoseMg = actConc * pcaDoseMl;
 
   // プレースホルダー更新
   document.getElementById('ivPcaDose').placeholder = pcaDoseMl.toFixed(2);
 
-  // Step5: 流速計算
-  // cassVol = flowRate×24×days + pcaDoseMl×pcaPerDay×days
-  // flowRate×24 = (cassVol/days - pcaDoseMl×pcaPerDay)
-  var flowPerDay = cassVol / days - pcaDoseMl * pcaPerDay;
-  var flowRate = flowPerDay / 24;
-
-  if(flowRate <= 0){
-    ra.innerHTML='<div class="iv-result"><div class="iv-warn">PCAドーズ量が多すぎてカセット容量内に収まりません。PCA回数・日数・カセット容量を見直してください。</div></div>';
-    return;
-  }
-
-  // Step6: 実際の値
-  var contDpd   = actConc * flowRate * 24;
+  // Step5: 実際の値
+  var contDpd    = actConc * flowRate * 24;
   var pcaTotalMg = pcaDoseMg * pcaPerDay;
   var totalDpdActual = contDpd + pcaTotalMg;
-  var actualDays = cassVol / (flowRate*24 + pcaDoseMl*pcaPerDay);
+  var actualDays = cassVol / (flowRate * (24 + pcaPerDay));
   var flowMlDay  = flowRate * 24;
 
   var html='<div class="iv-result">';
@@ -368,10 +370,10 @@ function calcIV(){
   // メイン4スタット
   html+='<div class="stat-row">';
   html+='<div class="stat hi"><div class="lbl">流速（自動計算）</div><div class="val">'+flowRate.toFixed(3)+'<span class="unt">mL/hr</span></div></div>';
-  html+='<div class="stat hi"><div class="lbl">PCAドーズ量</div><div class="val">'+pcaDoseMl.toFixed(2)+'<span class="unt">mL/回</span></div></div>';
+  html+='<div class="stat hi"><div class="lbl">PCAドーズ量（1時間分）</div><div class="val">'+pcaDoseMl.toFixed(2)+'<span class="unt">mL/回</span></div></div>';
   html+='</div>';
   html+='<div class="stat-row">';
-  html+='<div class="stat hi"><div class="lbl">PCAドーズ (mg/回) <span style="font-weight:400;font-size:10px;opacity:.75">= '+ivSel.name+'量</span></div><div class="val">'+pcaDoseMg.toFixed(1)+'<span class="unt">mg</span></div></div>';
+  html+='<div class="stat hi"><div class="lbl">PCAドーズ (mg/回) <span style="font-weight:400;font-size:10px;opacity:.75">= '+ivSel.name+'量</span></div><div class="val">'+pcaDoseMg.toFixed(2)+'<span class="unt">mg</span></div></div>';
   html+='<div class="stat hi"><div class="lbl">ロックアウト</div><div class="val">'+lockout+'<span class="unt">分</span></div></div>';
   html+='</div>';
 
